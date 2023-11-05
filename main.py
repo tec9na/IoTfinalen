@@ -104,7 +104,7 @@ def clear_neo():
         
 clear_neo()
 
-inaktivitet_periode_ms = 10000
+inaktivitet_periode_ms = 30000
 
 started = False
 inaktivitet_starttid_ms = ticks_ms()
@@ -141,7 +141,7 @@ while True:
         
         
         
-        #Her kommer GPS koden:##############################################################
+        #GPS koden:##############################################################
         
         gps_data = get_adafruit_gps()
         if gps_data: # hvis der er korrekt data så send til adafruit
@@ -200,4 +200,3 @@ while True:
 
 
 
-        
