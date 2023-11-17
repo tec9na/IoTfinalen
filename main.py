@@ -63,11 +63,11 @@ def get_adafruit_gps():                               # Her definere vi en funkt
 
 # Batteri data på NeoPixel #
 
-def bat_perc(volt):
-                batt_per = 100 * ((volt - 1.65) / (2.4 - 1.65))
-                return batt_per
+def bat_perc(volt):                                                                 # Her defineres en funktion som skal regne batteriprocent ud baseret på det spændning/volt, den kaldes i linje 155
+                batt_per = 100 * ((volt - 1.65) / (2.4 - 1.65))                     # Her er udregningen, volt= (...) - 1.65 = (...) / med 2.4 = (...) - 1.65 = (...) som giver os batteriprocenten
+                return batt_per                                                     # Bruges til at returnere værdien fra vores batt_perc, som er batteriprocenten fra vores overstående funktion
 
-def np_batteri(np_status_bat):                                                      # 
+def np_batteri(np_status_bat):                                                      # Denne funktion oprettes for at kunne "sende" dataen fra batteriprocenten ud på NP'ens 2 LED'er
     if np_status_bat > 30.0 and np_status_bat <= 100.0:                             # Hvis batteriprocenten er over 30%, lyser NP LED 11 og 10 grøn
         np[11] = (0,10,0)
         np[10] = (0,10,0)
@@ -131,34 +131,38 @@ while True:                                                        # Her starter
             print("")                                              # Print funktion - dette print, printer plads/rum i vores shell mellem vores outputs
             print("spiller er: TACKLET")                           # Print funktion
             status = True                                          # Status variablen ændres i if-betingelsen, 
-            if tackling_indikator < 10 :                           # Nr.2 if-statement, kommer i forlængelse af første if, som tjekker om tackling_indikator er mindre end 10 (tackling_indikator, i linje 97)
+            if tackling_indikator < 10 :                           # Nr.2 if-statement, kommer i forlængelse af første if, som tjekker om tackling_indikator er mindre end 10 (tackling_indikator, i linje 89)
                 
-                set_color(tackling_indikator)                      # Funktion med kaldenavn (set_color, fra linje 99) - dets argument (tacklings_indikator, fra linje 100 )  der tænder for én neopixel, dog kun hvis variablen er under 10. Når vi kalder på set_color() overføres argumentet til funktion
-                tackling_indikator = tackling_indikator+1          # Her opdateres variablen (fra linje 97) og inkrimenteres med 1 (dette betyder at den tilføjer +1 hver gang )
+                set_color(tackling_indikator)                      # Funktion med kaldenavn (set_color, fra linje 91) - dets argument (tacklings_indikator, fra linje 89)  der tænder for én neopixel, dog kun hvis variablen er under 10. Når vi kalder på set_color() overføres argumentet til funktion
+                tackling_indikator = tackling_indikator+1          # Her opdateres variablen (fra linje 89) og inkrimenteres med 1 (dette betyder at den tilføjer +1 hver gang)
         
         print("")
         #stå op kode:
         if vals["acceleration y"] < -8000 and status == True:      # Dette if-statement forventer også 2xTrue for at eksevere kodeblokken = hvis accelerationen på y-aksen falder under -8000 og hvis variablen status er sat til True = "OPREJST" 
-            status = False                                         # 
-            print("spiller er: OPREJST")
-        print("")
+            status = False                                         # Det omvendte af status = True i linje 133 if-statement
+            print("spiller er: OPREJST")                           # Print funktion
+        print("")                                                  # Print funktion
         
         
         
-# GPS kode #
+# GPS kode + Batteriprocent #
         
-        gps_data = get_adafruit_gps()
-        if gps_data: # hvis der er korrekt data så send til adafruit
-            print(f'\ngps_data er: {gps_data}')
-        volt = read_battery_voltage()
-        battery_percentage = bat_perc(volt)
-        mqtt.web_print(battery_percentage, 'tec9na/feeds/ESP32Feed')
+        gps_data = get_adafruit_gps()                                     # Vi "kalder" get_adafruit_gps(), fra gps_bare_minimum modulet, et objekt fra GPS_minimum klassen, dataen bliver herefter "opbevaret" i vores variabel, gps_data
+        if gps_data:                                                      # Hvis der er korrekt data så send til adafruit
+            print(f'\ngps_data er: {gps_data}')                           # Print funktion, med "mærkelige brackets", der kalder på vores værdi fra linje 150
+            
+        volt = read_battery_voltage()                                     # Denne variabel tildeler værdien, læsningen af batteri spændning, til variablen volt
+        battery_percentage = bat_perc(volt)                               # Her kalder vi en funktion, som tidligere defineret i linje 66, som udregner batteriprocent ud fra vores spændning
+        
+        mqtt.web_print(battery_percentage, 'tec9na/feeds/ESP32Feed')      # Her bruges funktionkald til at sende batteridata til adafruit
         sleep(3)
-        mqtt.web_print(gps_data, 'tec9na/feeds/mapfeed/csv')
+        
+        mqtt.web_print(gps_data, 'tec9na/feeds/mapfeed/csv')              # Igen bruges funktionkald, dog til at sende GPS-data til adafruit
         sleep(3)
-        volt = read_battery_voltage()
-        np_status_bat = bat_perc(volt)
-        np_batteri(np_status_bat)
+        
+        volt = read_battery_voltage()                                     # Her læses batterispændningen igen 
+        np_status_bat = bat_perc(volt)                                    # Igen, beregnes batteriprocenten, dog tilknyttet NP'en
+        np_batteri(np_status_bat)                                         # Her kaldes funktion bat_perc() som også har argumentet, volt - som tilegnes variablen np_status_bat
         
         sleep(3) 
         
@@ -178,7 +182,7 @@ while True:                                                        # Her starter
                 if started == False:
                     inaktivitet_starttid_ms = ticks_ms()                        # Hvis started = False, ændres/opdateres "stopuret" 
                     print("genstarter tid1")                                    # Print funktion
-                    started = True                                              # 
+                    started = True                                              # Hvis started = False i if-betingelsen, ændres status = True
                 
                 if ticks_ms() - inaktivitet_starttid_ms > inaktivitet_periode_ms:   # if-statement der eksekveres hvis stopuret rammer 30 sek (30000ms) = inaktivitet_starttid_ms er større end inaktivitet_periode_ms
                     print("starter buzzer")
@@ -187,28 +191,28 @@ while True:                                                        # Her starter
                     print("genstarter tid2")
                     
             if speed > 0.3:                                                         # if-statement = hvis speed er større end 0.3, afbryd buzzer og i forlængelse af det tidligere if-statement med værdien fra ticks_ms, genstart tid hvis hastighed overstiger 0.3
-                buzzer.duty(0)
-                started = False
+                buzzer.duty(0)                                                      # Lyden i buzzeren slukkes/ skrues helt ned til 0
+                started = False                                                     # Hvis started = False
                 print("stopper buzzer")
             sleep(1)
 
 # Batteridata #
             
-            print("Batterspænding er:", read_battery_voltage())
-            volt = read_battery_voltage()
+            print("Batterspænding er:", read_battery_voltage())                     # Pinter batteri spændningen
+            volt = read_battery_voltage()                                           # Læser batteri spændningen
             
             
-            bat_perc(volt)
-            print(bat_perc(volt))
+            bat_perc(volt)                                                          # Læser batteri procenten 
+            print(bat_perc(volt))                                                   # Printer batteriprocenten ud fra vores spændning
             
             sleep(1)
             
             
-        # Her sender vi og modtager data mellem ESP og Adafruit #
+# Her sender vi og modtager data mellem ESP og Adafruit #
             
-        if len(mqtt.besked) != 0: # Her nulstilles indkommende beskeder
+        if len(mqtt.besked) != 0:                                                    # Her nulstilles indkommende beskeder
             mqtt.besked = ""
-        mqtt.sync_with_adafruitIO() # igangsæt at sende og modtage data med Adafruit IO
+        mqtt.sync_with_adafruitIO()                                                  # igangsæt at sende og modtage data med Adafruit IO
         
 #################################################################################
         
