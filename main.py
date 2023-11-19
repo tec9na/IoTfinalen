@@ -9,13 +9,13 @@ import math                                    # Import af math modul til udregn
 ########################################################################
 
 n = 12                                    # NeoPixelens 12 LED'er
-np = NeoPixel(Pin(13, Pin.OUT),n)         # NP forbindes til ben 13 på ESP'eren
+np = NeoPixel(Pin(13, Pin.OUT),n)         # NP forbindes til ben 13 på ESP'eren, Pin objekt bliver lavet ud fra Pin klassen og NeoPixel klassen
 
 
 i2c = I2C(scl=Pin(22),sda=Pin(21))        # Her forbindes i2c til ben 22 (SCL) & 21 (SDA)
-imu = MPU6050(i2c)                        # Her forbindes IMU'en til i2c objektet
+imu = MPU6050(i2c)                        # Her forbindes IMU'en til i2c objektet, vha vi laver en instans ved navnet imu
 
-buzzer = PWM(Pin(26), freq=420, duty=0)   # Buzzer forbindes til ben 26 og frekvens og duty cycle sættes
+buzzer = PWM(Pin(26), freq=420, duty=0)   # Buzzer forbindes til ben 26 og frekvens og duty cycle sættes, pin objekt oprettes vha klasserne PWM og Pin
 
 
 #########################################################################
@@ -24,12 +24,12 @@ gps_port = 2                              # ESP32 UART port, Educaboard ESP32 de
 gps_speed = 9600                          # UART speed, defauls u-blox speed, baud rate
 #########################################################################
 # OBJECTS
-uart = UART(gps_port, gps_speed)          # UART object creation
+uart = UART(gps_port, gps_speed)          # UART object creation, vi opretter et objekt ud fra UART klassen, hvor vi giver det argumenterne gps_port og gps_speed
 gps = GPS_Minimum(uart)                   # GPS object creation
 #########################################################################
-bat_adc = ADC(Pin(35))                    # The battery status ADC object
-bat_adc.atten(ADC.ATTN_11DB)              # Full range: 3,3 V - sltter attebtuation til 11DB så vi kan måle op til 3.3V
-bat_scaling = 3.3 / 4095                  # Vores forsøg på udregning af batteriprocent
+bat_adc = ADC(Pin(35))                    # The battery status ADC object, pin objekt oprettes ud fra ADC klassen
+bat_adc.atten(ADC.ATTN_11DB)              # Full range: 3,3 V - sætter attenuation til 11DB så vi kan måle op til 3.3V
+bat_scaling = 3.3 / 4095                  # Vores forsøg på udregning af batteriprocent 3.3 = max spændning på esp32'er 4095 = max ADC (fordi der er 12Bits ADC width)
 #########################################################################
 
 # Batteridata #
@@ -43,28 +43,30 @@ def read_battery_voltage():               # Her opretter vi en funktion der læs
 # GPS data #
 
 
-def get_adafruit_gps():                               # Her definere vi en funktion der skal hente GPS-data og sende det til adafruit 
-    speed = lat = lon = None                          # Opretter variabler med None som værdi
+def get_adafruit_gps():                               # Her definere vi en funktion der skal hente GPS-data fra GPS_Minimum klassen, og sende det til adafruit 
+    speed = lat = lon = None                          # Opretter variabler med None som værdi, som bruges som startværdi (default værdi)
     if gps.receive_nmea_data():                       # Denne if betingelse køres hvis der modtages korrekt GPS-data
         
         if gps.get_speed() != -999 and gps.get_latitude() != -999.0 and gps.get_longitude() != -999.0 and gps.get_validity() == "A":  # Hvis der modtages bruggbare værdier, anvendes funktionerne 
             
             # I de nææte 3 linjer af koden, gemmes returværdier fra metodekald i variabler
-            speed =str(gps.get_speed()) 
+            speed = str(gps.get_speed()) 
             lat = str(gps.get_latitude()) 
             lon = str(gps.get_longitude())
             
             return speed + "," + lat + "," + lon + "," + "0.0"                                                    # Returnerer data med adafruit gps format
         else:                                                                                                     # else betingelsen udføres hvis ikke der modtages data fra GPS, printer nedenstående og returnere False
-            print(f"GPS data to adafruit not valid:\nspeed: {speed}\nlatitude: {lat}\nlongtitude: {lon}")
+            print(f"GPS data to adafruit not valid:\nspeed: {speed}\nlatitude: {lat}\nlongtitude: {lon}")         #F string!!! En string med variable INDE i stringen. 
             return False
     else:
         return False
 
 # Batteri data på NeoPixel #
 
-def bat_perc(volt):                                                                 # Her defineres en funktion som skal regne batteriprocent ud baseret på det spændning/volt, den kaldes i linje 155
-                batt_per = 100 * ((volt - 1.65) / (2.4 - 1.65))                     # Her er udregningen, volt= (...) - 1.65 = (...) / med 2.4 = (...) - 1.65 = (...) som giver os batteriprocenten
+def bat_perc(volt):                                                                 # Her defineres en funktion som skal regne batteriprocent ud baseret på argumentet "volt", som er det spændning/volt vi får i tidligere read_battery_percentage, den kaldes i linje 155
+                min_spaending = 1.65
+                max_spaending = 2.4
+                batt_per = 100 * ((volt - min_spaending) / (max_spaending - min_spaending))                     # Her er udregningen, volt= (...) - 1.65 = (...) / med 2.4 = (...) - 1.65 = (...) som giver os batteriprocenten
                 return batt_per                                                     # Bruges til at returnere værdien fra vores batt_perc, som er batteriprocenten fra vores overstående funktion
 
 def np_batteri(np_status_bat):                                                      # Denne funktion oprettes for at kunne "sende" dataen fra batteriprocenten ud på NP'ens 2 LED'er
@@ -89,7 +91,7 @@ def np_batteri(np_status_bat):                                                  
 tackling_indikator = 0                                             # Her defineres vores variabel til registrering af antallet af tacklinger 
 
 def set_color(tackling_indikator):                                 # Oprettelse af funktion, med inputvariablen (tackling_indikator), der kontrollere farven på LED'erne på NP og kaldes senere i koden
-    np[tackling_indikator] = (10,0,10)                             # Farven er lilla, da vi kombinere rød og blå (r, g, b)
+    np[tackling_indikator] = (10,0,10)                             # Farven er lilla, da vi kombinere rød og blå (r, g, b). Tackling_indikator fortæller hvilket nummer neopixel der skal lyse
     np.write()                                                     # np.write() funktionen bruges til at "igangsætte" ændringer af farven på NP'ens LED'er
 
     
@@ -109,10 +111,8 @@ clear_neo()                                                        # Denne funkt
 inaktivitet_periode_ms = 30000                                     # Her sætter vi inaktivitets_periode_ms til 30 sekunder, det står som 30000 da vi bruger ticks_ms
 
 started = False                                                    # Variablen started får værdien False, den støtter den senere betingelse (inaktivitets indikator i linje 178, 181, 191), og indikere også stopurets start
-inaktivitet_starttid_ms = ticks_ms()                               # Starttids variabel for inaktivitets indikatoren, får værdien ticks_ms() = bliver kaldt og returnere en værdi i antal millisekunder (30000 ms), der udløser en "måling/tælling" af tiden efter sidste bevægelse
+inaktivitet_starttid_ms = ticks_ms()                               # Starttids variabel for inaktivitets indikatoren, får værdien ticks_ms() = bliver kaldt og returnere en værdi i antal millisekunder (30000 ms), der udløser en "måling/tælling/stopur" af tiden efter sidste bevægelse
 
-
-# Tacklings indikator #
 
 
 while True:                                                        # Her starter den uendelige while True løkke
